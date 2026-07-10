@@ -116,9 +116,10 @@ func (s *Server) handleDiscordToggleMute(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":     true,
-		"before": before,
-		"after":  after,
+		"ok":      true,
+		"discord": after,
+		"before":  before,
+		"after":   after,
 	})
 }
 
@@ -132,9 +133,10 @@ func (s *Server) handleDiscordToggleDeaf(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"ok":     true,
-		"before": before,
-		"after":  after,
+		"ok":      true,
+		"discord": after,
+		"before":  before,
+		"after":   after,
 	})
 }
 

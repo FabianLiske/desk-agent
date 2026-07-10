@@ -205,15 +205,19 @@ func TestDiscordToggleMute(t *testing.T) {
 	}
 
 	var out struct {
-		OK     bool             `json:"ok"`
-		Before discordrpc.State `json:"before"`
-		After  discordrpc.State `json:"after"`
+		OK      bool             `json:"ok"`
+		Discord discordrpc.State `json:"discord"`
+		Before  discordrpc.State `json:"before"`
+		After   discordrpc.State `json:"after"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
 	if !out.OK || out.Before.Mute || !out.Before.Deaf || !out.After.Mute || !out.After.Deaf {
 		t.Fatalf("payload: %+v", out)
+	}
+	if out.Discord != out.After {
+		t.Fatalf("discord state should match after: %+v", out)
 	}
 }
 

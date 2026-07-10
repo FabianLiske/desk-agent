@@ -24,6 +24,7 @@ const (
 	opHandshake = 0
 	opFrame     = 1
 
+	defaultRPCTimeout  = 5 * time.Second
 	defaultRedirectURI = "http://localhost"
 	defaultScopes      = "rpc"
 )
@@ -49,6 +50,7 @@ type Client struct {
 	http   *http.Client
 	logger *slog.Logger
 	mu     sync.Mutex
+	ops    chan struct{}
 }
 
 type session struct {
@@ -116,6 +118,7 @@ func New(cfg Config, logger *slog.Logger) *Client {
 		cfg:    cfg,
 		http:   &http.Client{Timeout: 15 * time.Second},
 		logger: logger,
+		ops:    make(chan struct{}, 1),
 	}
 }
 
@@ -143,6 +146,14 @@ func (c *Client) Authorize(ctx context.Context) error {
 
 // State returns the current Discord mute/deafen state.
 func (c *Client) State(ctx context.Context) (State, error) {
+	ctx, cancel := withDefaultTimeout(ctx)
+	defer cancel()
+	unlock, err := c.acquire(ctx)
+	if err != nil {
+		return State{}, err
+	}
+	defer unlock()
+
 	s, err := c.open(ctx)
 	if err != nil {
 		return State{}, err
@@ -161,6 +172,14 @@ func (s *session) State(ctx context.Context) (State, error) {
 
 // SetMute sets Discord mute and returns the resulting state.
 func (c *Client) SetMute(ctx context.Context, mute bool) (State, error) {
+	ctx, cancel := withDefaultTimeout(ctx)
+	defer cancel()
+	unlock, err := c.acquire(ctx)
+	if err != nil {
+		return State{}, err
+	}
+	defer unlock()
+
 	s, err := c.open(ctx)
 	if err != nil {
 		return State{}, err
@@ -178,6 +197,14 @@ func (s *session) SetMute(ctx context.Context, mute bool) (State, error) {
 
 // SetDeaf sets Discord deafen and returns the resulting state.
 func (c *Client) SetDeaf(ctx context.Context, deaf bool) (State, error) {
+	ctx, cancel := withDefaultTimeout(ctx)
+	defer cancel()
+	unlock, err := c.acquire(ctx)
+	if err != nil {
+		return State{}, err
+	}
+	defer unlock()
+
 	s, err := c.open(ctx)
 	if err != nil {
 		return State{}, err
@@ -195,6 +222,14 @@ func (s *session) SetDeaf(ctx context.Context, deaf bool) (State, error) {
 
 // ToggleMute toggles Discord mute and returns before/after states.
 func (c *Client) ToggleMute(ctx context.Context) (State, State, error) {
+	ctx, cancel := withDefaultTimeout(ctx)
+	defer cancel()
+	unlock, err := c.acquire(ctx)
+	if err != nil {
+		return State{}, State{}, err
+	}
+	defer unlock()
+
 	s, err := c.open(ctx)
 	if err != nil {
 		return State{}, State{}, err
@@ -210,6 +245,14 @@ func (c *Client) ToggleMute(ctx context.Context) (State, State, error) {
 
 // ToggleDeaf toggles Discord deafen and returns before/after states.
 func (c *Client) ToggleDeaf(ctx context.Context) (State, State, error) {
+	ctx, cancel := withDefaultTimeout(ctx)
+	defer cancel()
+	unlock, err := c.acquire(ctx)
+	if err != nil {
+		return State{}, State{}, err
+	}
+	defer unlock()
+
 	s, err := c.open(ctx)
 	if err != nil {
 		return State{}, State{}, err
@@ -224,6 +267,14 @@ func (c *Client) ToggleDeaf(ctx context.Context) (State, State, error) {
 }
 
 func (c *Client) call(ctx context.Context, cmd string, args map[string]any, out any) error {
+	ctx, cancel := withDefaultTimeout(ctx)
+	defer cancel()
+	unlock, err := c.acquire(ctx)
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	s, err := c.open(ctx)
 	if err != nil {
 		return err
@@ -252,6 +303,15 @@ func (c *Client) open(ctx context.Context) (*session, error) {
 		return nil, fmt.Errorf("authenticate: %w", err)
 	}
 	return &session{client: c, conn: conn}, nil
+}
+
+func (c *Client) acquire(ctx context.Context) (func(), error) {
+	select {
+	case c.ops <- struct{}{}:
+		return func() { <-c.ops }, nil
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
 }
 
 func (s *session) Close() error {
@@ -435,7 +495,7 @@ func writePacket(ctx context.Context, conn net.Conn, op uint32, payload any) err
 	if deadline, ok := ctx.Deadline(); ok {
 		_ = conn.SetWriteDeadline(deadline)
 	} else {
-		_ = conn.SetWriteDeadline(time.Now().Add(30 * time.Second))
+		_ = conn.SetWriteDeadline(time.Now().Add(defaultRPCTimeout))
 	}
 	var header [8]byte
 	binary.LittleEndian.PutUint32(header[0:4], op)
@@ -448,7 +508,7 @@ func readPacket(ctx context.Context, conn net.Conn) (*rpcResponse, error) {
 	if deadline, ok := ctx.Deadline(); ok {
 		_ = conn.SetReadDeadline(deadline)
 	} else {
-		_ = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+		_ = conn.SetReadDeadline(time.Now().Add(defaultRPCTimeout))
 	}
 	var header [8]byte
 	if _, err := io.ReadFull(conn, header[:]); err != nil {
@@ -530,4 +590,11 @@ func getenvDefault(name, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func withDefaultTimeout(ctx context.Context) (context.Context, context.CancelFunc) {
+	if _, ok := ctx.Deadline(); ok {
+		return ctx, func() {}
+	}
+	return context.WithTimeout(ctx, defaultRPCTimeout)
 }
