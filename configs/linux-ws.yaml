@@ -1,0 +1,22 @@
+# linux-ws.yaml — example config for a Linux workstation.
+#
+# Copy to ~/.config/desk-agent/config.yaml on the target machine and adjust.
+# The token is read from the DESK_AGENT_TOKEN env var (token_env below).
+# Set it in the systemd user unit's EnvironmentFile — never commit it.
+
+listen: "0.0.0.0:8765"
+token_env: "DESK_AGENT_TOKEN"
+run_timeout: "60s"
+
+actions:
+  gaming_mode:
+    script: gaming-mode.sh
+    description: "Gaming-Modus: kanshi/hyprland Monitorprofil, Audio-Sink, Steam Big Picture"
+
+  desk_120hz:
+    script: desk-120hz.sh
+    description: "Alle Monitore auf 120 Hz (Hyprland)"
+
+  discord_mute:
+    script: discord-mute.sh
+    description: "Discord-Toggle-Mute via ydotool/xdotool"

@@ -1,0 +1,23 @@
+[Unit]
+Description=Desk Control Agent
+Documentation=https://github.com/fabianliske/desk-agent
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Type=simple
+# Adjust to wherever you installed the binary. Default install:
+#   ~/.local/bin/desk-agent
+ExecStart=%h/.local/bin/desk-agent
+# Optional: a env file containing DESK_AGENT_TOKEN=... and other overrides.
+# Make sure the file is chmod 600.
+EnvironmentFile=-%h/.config/desk-agent/desk-agent.env
+Restart=on-failure
+RestartSec=2s
+
+# Give the actions access to the graphical session's environment.
+# systemd's user manager already inherits DISPLAY / WAYLAND_DISPLAY /
+# XDG_RUNTIME_DIR when started via the graphical session target.
+
+[Install]
+WantedBy=graphical-session.target

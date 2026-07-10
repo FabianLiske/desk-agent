@@ -1,0 +1,66 @@
+name: build
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+      - name: go vet
+        run: go vet ./...
+      - name: go test
+        run: go test ./... -count=1
+
+  build:
+    name: build (${{ matrix.target.name }})
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { name: windows-amd64, goos: windows, goarch: amd64, ext: ".exe" }
+          - { name: linux-amd64,   goos: linux,   goarch: amd64, ext: "" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: build desk-agent
+        env:
+          GOOS: ${{ matrix.target.goos }}
+          GOARCH: ${{ matrix.target.goarch }}
+          CGO_ENABLED: '0'
+        run: |
+          mkdir -p dist
+          version="${GITHUB_REF_NAME:-dev}"
+          commit="${GITHUB_SHA::7}"
+          date="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          ldflags="-s -w"
+          ldflags="$ldflags -X main.version=$version"
+          ldflags="$ldflags -X main.commit=$commit"
+          ldflags="$ldflags -X main.date=$date"
+          out="dist/desk-agent-${{ matrix.target.name }}${{ matrix.target.ext }}"
+          go build -trimpath -ldflags "$ldflags" -o "$out" ./cmd/desk-agent
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desk-agent-${{ matrix.target.name }}
+          path: dist/desk-agent-${{ matrix.target.name }}${{ matrix.target.ext }}
+          if-no-files-found: error
+          retention-days: 14

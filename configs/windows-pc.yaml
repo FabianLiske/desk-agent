@@ -1,0 +1,26 @@
+# windows-pc.yaml — example config for a Windows workstation.
+#
+# Copy to %APPDATA%\desk-agent\config.yaml on the target machine and adjust.
+# The token is read from the DESK_AGENT_TOKEN env var (token_env below).
+# Set that in the scheduled-task definition, never commit the actual value.
+
+listen: "0.0.0.0:8765"
+token_env: "DESK_AGENT_TOKEN"
+run_timeout: "60s"
+
+actions:
+  tv_gaming:
+    script: tv-gaming.ps1
+    description: "TV-Gaming-Modus: TV-Monitorprofil, TV-Audio, Steam Big Picture"
+
+  desk:
+    script: desk.ps1
+    description: "Zurueck in den normalen Desktop-Modus (Headset-Audio, Standardmonitore)"
+
+  desk_120hz:
+    script: desk-120hz.ps1
+    description: "120-Hz-Sparmodus fuer den Desktopbetrieb"
+
+  discord_mute:
+    script: discord-mute.ps1
+    description: "Discord-eigenen Mute per Hotkey togglen"
