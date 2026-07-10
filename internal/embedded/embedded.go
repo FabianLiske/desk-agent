@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/fabianliske/desk-agent/assets"
+	assets "github.com/fabianliske/desk-agent"
 )
 
 // ExtractActions copies the embedded actions for the running OS into a

@@ -63,19 +63,19 @@ func TestRun_UnknownAction(t *testing.T) {
 // can exercise the full Run() path without depending on the embedded
 // scripts existing on disk.
 func TestRun_Executes(t *testing.T) {
-	r := &Runner{
-		actionsDir: t.TempDir(),
-		actions: map[string]config.Action{
+	r := New(Options{
+		ActionsDir: t.TempDir(),
+		Actions: map[string]config.Action{
 			"ping": {Script: dummyScriptName()},
 		},
-		timeout: 5 * time.Second,
-		buildCmd: func(ctx context.Context, _, _ string, _ []string) (*exec.Cmd, error) {
-			if runtime.GOOS == "windows" {
-				return exec.CommandContext(ctx, "cmd.exe", "/C", "echo", "hi"), nil
-			}
-			return exec.CommandContext(ctx, "/bin/sh", "-c", "echo hi"), nil
-		},
-	}
+		Timeout: 5 * time.Second,
+	})
+	r.SetBuildCmd(func(ctx context.Context, _, _ string, _ []string) (*exec.Cmd, error) {
+		if runtime.GOOS == "windows" {
+			return exec.CommandContext(ctx, "cmd.exe", "/C", "echo", "hi"), nil
+		}
+		return exec.CommandContext(ctx, "/bin/sh", "-c", "echo hi"), nil
+	})
 	res, err := r.Run(context.Background(), "ping")
 	if err != nil {
 		t.Fatalf("Run: %v", err)
