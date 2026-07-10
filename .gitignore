@@ -1,1 +1,27 @@
 designidee.md
+
+# build output
+/dist/
+/bin/
+/build/
+*.exe
+
+# go
+/vendor/
+
+# editor / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# local runtime data
+/tmp/
+/.desk-agent-run/
+
+# secrets / local overrides
+*.local.yaml
+*.secret
+.env
+.env.*
+!.env.example
