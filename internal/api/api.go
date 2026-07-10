@@ -22,6 +22,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fabianliske/desk-agent/internal/discordrpc"
 	"github.com/fabianliske/desk-agent/internal/runner"
 )
 
@@ -30,8 +31,18 @@ type Options struct {
 	Addr    string
 	Token   string
 	Runner  *runner.Runner
+	Discord Discord
 	Logger  *slog.Logger
 	Version string
+}
+
+// Discord is the Discord control surface used by the HTTP API.
+type Discord interface {
+	State(context.Context) (discordrpc.State, error)
+	SetMute(context.Context, bool) (discordrpc.State, error)
+	SetDeaf(context.Context, bool) (discordrpc.State, error)
+	ToggleMute(context.Context) (discordrpc.State, discordrpc.State, error)
+	ToggleDeaf(context.Context) (discordrpc.State, discordrpc.State, error)
 }
 
 // Server wraps http.Server with the agent's routes.
@@ -40,6 +51,7 @@ type Server struct {
 	logger  *slog.Logger
 	token   string
 	runner  *runner.Runner
+	discord Discord
 	version string
 }
 
@@ -52,6 +64,7 @@ func New(opts Options) *Server {
 		logger:  opts.Logger,
 		token:   opts.Token,
 		runner:  opts.Runner,
+		discord: opts.Discord,
 		version: opts.Version,
 	}
 
@@ -59,6 +72,13 @@ func New(opts Options) *Server {
 	mux.HandleFunc("GET /healthz", s.handleHealth)
 	mux.HandleFunc("GET /actions", s.requireToken(s.handleListActions))
 	mux.HandleFunc("POST /action/{name}", s.requireToken(s.handleRunAction))
+	mux.HandleFunc("GET /discord/state", s.requireToken(s.handleDiscordState))
+	mux.HandleFunc("POST /discord/mute/toggle", s.requireToken(s.handleDiscordToggleMute))
+	mux.HandleFunc("POST /discord/deafen/toggle", s.requireToken(s.handleDiscordToggleDeaf))
+	mux.HandleFunc("POST /discord/mute", s.requireToken(s.handleDiscordSetMute(true)))
+	mux.HandleFunc("POST /discord/unmute", s.requireToken(s.handleDiscordSetMute(false)))
+	mux.HandleFunc("POST /discord/deafen", s.requireToken(s.handleDiscordSetDeaf(true)))
+	mux.HandleFunc("POST /discord/undeafen", s.requireToken(s.handleDiscordSetDeaf(false)))
 
 	s.http = &http.Server{
 		Addr:              opts.Addr,
@@ -69,6 +89,95 @@ func New(opts Options) *Server {
 		IdleTimeout:       60 * time.Second,
 	}
 	return s
+}
+
+func (s *Server) handleDiscordState(w http.ResponseWriter, r *http.Request) {
+	if !s.discordAvailable(w) {
+		return
+	}
+	state, err := s.discord.State(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":      true,
+		"discord": state,
+	})
+}
+
+func (s *Server) handleDiscordToggleMute(w http.ResponseWriter, r *http.Request) {
+	if !s.discordAvailable(w) {
+		return
+	}
+	before, after, err := s.discord.ToggleMute(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":     true,
+		"before": before,
+		"after":  after,
+	})
+}
+
+func (s *Server) handleDiscordToggleDeaf(w http.ResponseWriter, r *http.Request) {
+	if !s.discordAvailable(w) {
+		return
+	}
+	before, after, err := s.discord.ToggleDeaf(r.Context())
+	if err != nil {
+		writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"ok":     true,
+		"before": before,
+		"after":  after,
+	})
+}
+
+func (s *Server) handleDiscordSetMute(mute bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !s.discordAvailable(w) {
+			return
+		}
+		state, err := s.discord.SetMute(r.Context(), mute)
+		if err != nil {
+			writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"ok":      true,
+			"discord": state,
+		})
+	}
+}
+
+func (s *Server) handleDiscordSetDeaf(deaf bool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !s.discordAvailable(w) {
+			return
+		}
+		state, err := s.discord.SetDeaf(r.Context(), deaf)
+		if err != nil {
+			writeJSON(w, http.StatusBadGateway, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{
+			"ok":      true,
+			"discord": state,
+		})
+	}
+}
+
+func (s *Server) discordAvailable(w http.ResponseWriter) bool {
+	if s.discord != nil {
+		return true
+	}
+	writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "discord rpc is not configured"})
+	return false
 }
 
 // ListenAndServe forwards to the underlying http.Server.
@@ -218,4 +327,3 @@ func errString(err error) string {
 	}
 	return err.Error()
 }
-

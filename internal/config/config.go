@@ -92,9 +92,6 @@ func (c *Config) validate() error {
 	if strings.TrimSpace(c.Token) == "" {
 		return errors.New("token is empty: set 'token' or 'token_env' in the config")
 	}
-	if len(c.Actions) == 0 {
-		return errors.New("no actions defined")
-	}
 	for name, a := range c.Actions {
 		if !validActionName(name) {
 			return fmt.Errorf("invalid action name %q: only [a-z0-9_] allowed", name)

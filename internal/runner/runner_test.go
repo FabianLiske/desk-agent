@@ -28,7 +28,7 @@ func TestBuildCommand_WindowsPS1(t *testing.T) {
 }
 
 func TestBuildCommand_LinuxSh(t *testing.T) {
-	cmd, err := BuildCommand(context.Background(), "linux", "/opt/actions/gaming-mode.sh", []string{"a", "b"})
+	cmd, err := BuildCommand(context.Background(), "linux", "/opt/actions/script.sh", []string{"a", "b"})
 	if err != nil {
 		t.Fatalf("BuildCommand: %v", err)
 	}

@@ -1,10 +1,9 @@
 # desk-agent
 
 Kleiner lokaler Automationsdienst fuer Windows- und Linux-Systeme. Wird per HTTP
-angesprochen (z.B. von Bitfocus Companion auf einem Raspberry Pi) und fuehrt
-allow-gelistete Skripte im aktiven Benutzerkontext aus.
-
-Detaillierte Motivation und Zielarchitektur: siehe `designidee.md`.
+angesprochen (z.B. von Bitfocus Companion auf einem Raspberry Pi), fuehrt
+allow-gelistete Skripte im aktiven Benutzerkontext aus und bietet stateful
+Discord-Steuerung per lokaler RPC.
 
 ## Aufbau
 
@@ -14,13 +13,13 @@ internal/api/            HTTP-Server mit Token-Auth
 internal/config/         YAML-Config-Loader
 internal/embedded/       Extrahiert eingebettete Actions in ein Datenverzeichnis
 internal/runner/         Fuehrt Actions per PowerShell / /bin/sh aus
+internal/discordrpc/     Lokale Discord-RPC-Steuerung fuer Mute/Deafen/State
 assets.go                //go:embed all:actions  (im Modul-Root, damit embed die actions/ sieht)
 actions/windows/         PowerShell-Skripte
-actions/linux/           Shell-Skripte
 configs/                 Beispiel-YAML-Konfigurationen
 packaging/               systemd-Unit und Windows-Scheduled-Task-Skripte
 .github/workflows/       CI (build) und Release
-Taskfile.yml             lokale Entwicklungskommandos
+Makefile                 lokale Entwicklungskommandos
 ```
 
 Warum liegt `assets.go` (die `//go:embed`-Datei) im Modul-Root und nicht unter
@@ -36,6 +35,11 @@ sonst nichts.
 | GET     | `/healthz`        | keine | `ok`                                                             |
 | GET     | `/actions`        | Token | Liste der konfigurierten Actions inkl. Version                    |
 | POST    | `/action/{name}`  | Token | Fuehrt die Action `name` aus. Antwortet mit `exit_code` und Log. |
+| GET     | `/discord/state`  | Token | Discord `mute`/`deaf` State per lokaler RPC                       |
+| POST    | `/discord/mute/toggle`   | Token | Discord Mute togglen und `before`/`after` zurueckgeben    |
+| POST    | `/discord/deafen/toggle` | Token | Discord Deafen togglen und `before`/`after` zurueckgeben  |
+| POST    | `/discord/mute` / `/discord/unmute` | Token | Discord Mute explizit setzen/loeschen         |
+| POST    | `/discord/deafen` / `/discord/undeafen` | Token | Discord Deafen explizit setzen/loeschen   |
 
 Der Token muss im Header stehen — entweder `Authorization: Bearer <token>` oder
 `X-Desk-Agent-Token: <token>`. Es gibt bewusst kein Query-Parameter-Fallback.
@@ -63,10 +67,10 @@ EnvironmentFile auf Linux).
 ## Lokaler Entwicklungs-Workflow
 
 ```bash
-task run            # aus Source starten
-task test           # tests
-task build          # native Binary in ./dist
-task build:all      # windows-amd64 + linux-amd64
+make run            # aus Source starten
+make test           # tests
+make build          # native Binary in ~/build/desk-agent
+make build-all      # windows-amd64 + linux-amd64
 ```
 
 Ohne Task:
@@ -75,6 +79,27 @@ Ohne Task:
 go run  ./cmd/desk-agent
 go test ./...
 go build -o dist/desk-agent ./cmd/desk-agent
+```
+
+## Discord RPC
+
+Fuer stateful Discord-Steuerung ohne Fensterfokus kann der Agent Discords
+lokalen RPC/IPC-Socket verwenden. Setze `DISCORD_CLIENT_ID` und
+`DISCORD_CLIENT_SECRET` in der Umgebung des Agent-Prozesses. Die Discord-App
+braucht als OAuth-Redirect `http://localhost`.
+
+Einmalig am Desktop autorisieren:
+
+```bash
+desk-agent -discord-auth
+```
+
+Danach liegen Access-/Refresh-Token lokal unter
+`~/.config/desk-agent/discord-rpc-token.json` (oder `DISCORD_TOKEN_CACHE`) und
+die HTTP-Endpunkte liefern direkt maschinenlesbaren State:
+
+```json
+{"ok":true,"discord":{"mute":false,"deaf":false}}
 ```
 
 ## Deployment
@@ -96,16 +121,38 @@ laeuft (Session 1, nicht 0). Der Token wird in der User-Umgebung gespeichert.
 ```bash
 ./packaging/linux/install.sh ./desk-agent-linux-amd64
 # dann:
-#   ~/.config/desk-agent/desk-agent.env    → DESK_AGENT_TOKEN=...
+#   ~/.config/desk-agent/desk-agent.env    → DESK_AGENT_TOKEN=..., DISCORD_CLIENT_ID=...
 #   ~/.config/desk-agent/config.yaml       → aus configs/linux-ws.yaml adaptieren
+source ~/.config/desk-agent/desk-agent.env
+~/.local/bin/desk-agent -discord-auth
 systemctl --user daemon-reload
 systemctl --user enable --now desk-agent
 ```
 
+Skriptbar mit Env-Datei und einmaliger Discord-Autorisierung:
+
+```bash
+DESK_AGENT_TOKEN="$(openssl rand -hex 32)" \
+DISCORD_CLIENT_ID="..." \
+DISCORD_CLIENT_SECRET="..." \
+./packaging/linux/install.sh ./desk-agent-linux-amd64 \
+  --write-env --discord-auth --enable --start
+```
+
+Secrets und Tokens:
+
+- `~/.config/desk-agent/desk-agent.env` enthaelt statische Secrets wie
+  `DESK_AGENT_TOKEN`, `DISCORD_CLIENT_ID` und `DISCORD_CLIENT_SECRET`; setze
+  `chmod 600`.
+- `~/.config/desk-agent/discord-rpc-token.json` wird von `-discord-auth`
+  erzeugt und enthaelt Discord Access-/Refresh-Token; die Datei wird mit
+  `0600` geschrieben.
+- Beide Dateien bleiben lokal auf der Workstation und gehoeren nicht ins Repo.
+
 ## Sicherheit
 
-- Nur die Actions aus der Config sind ausfuehrbar. Es gibt keinen freien
-  Kommando-Endpoint.
+- Nur die Actions aus der Config und die festen Discord-RPC-Endpunkte sind
+  ausfuehrbar. Es gibt keinen freien Kommando-Endpoint.
 - Argumente aus HTTP-Requests werden nicht an die Skripte durchgereicht.
   Skripte lesen ihre Parameter aus Environment-Variablen.
 - Token-Vergleich in konstanter Zeit (`crypto/subtle`).
@@ -118,9 +165,8 @@ systemctl --user enable --now desk-agent
 | -------------- | --------------------- | -------------------- | --------------------------------------------------------- |
 | `tv_gaming`    | `tv-gaming.ps1`       | —                    | TV-Monitorprofil, TV-Audio, Steam Big Picture             |
 | `desk`         | `desk.ps1`            | —                    | Rueck in Desktop-Modus                                    |
-| `desk_120hz`   | `desk-120hz.ps1`      | `desk-120hz.sh`      | Alle Monitore auf 120 Hz                                  |
-| `discord_mute` | `discord-mute.ps1`    | `discord-mute.sh`    | Discord-eigenen Mute per Hotkey togglen (kein System-Mute) |
-| `gaming_mode`  | —                     | `gaming-mode.sh`     | Hyprland/kanshi-Profil, Audio-Sink, Steam Big Picture     |
+| `desk_120hz`   | `desk-120hz.ps1`      | —                    | Alle Monitore auf 120 Hz                                  |
+| `discord_mute` | `discord-mute.ps1`    | —                    | Discord-eigenen Mute per Hotkey togglen (kein System-Mute) |
 
 Voraussetzungen pro Action sind im Skript-Header dokumentiert.
 

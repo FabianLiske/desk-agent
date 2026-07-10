@@ -64,9 +64,6 @@ actions:
 func TestLoad_DefaultsWhenFieldsMissing(t *testing.T) {
 	p := writeConfig(t, `
 token: t
-actions:
-  a:
-    script: a.sh
 `)
 	cfg, _, err := Load(p)
 	if err != nil {
@@ -77,6 +74,9 @@ actions:
 	}
 	if cfg.RunTimeout().Seconds() != 60 {
 		t.Fatalf("default timeout: %v", cfg.RunTimeout())
+	}
+	if len(cfg.Actions) != 0 {
+		t.Fatalf("expected no actions, got %d", len(cfg.Actions))
 	}
 }
 

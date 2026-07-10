@@ -14,6 +14,7 @@ import (
 
 	"github.com/fabianliske/desk-agent/internal/api"
 	"github.com/fabianliske/desk-agent/internal/config"
+	"github.com/fabianliske/desk-agent/internal/discordrpc"
 	"github.com/fabianliske/desk-agent/internal/embedded"
 	"github.com/fabianliske/desk-agent/internal/runner"
 )
@@ -35,11 +36,13 @@ func run() error {
 	var (
 		configPath  string
 		showVersion bool
+		discordAuth bool
 		logLevel    string
 	)
 
 	flag.StringVar(&configPath, "config", "", "path to config file (yaml). If empty, the default location for the OS is used.")
 	flag.BoolVar(&showVersion, "version", false, "print version and exit")
+	flag.BoolVar(&discordAuth, "discord-auth", false, "authorize Discord RPC and cache the OAuth token, then exit")
 	flag.StringVar(&logLevel, "log-level", "info", "log level: debug|info|warn|error")
 	flag.Parse()
 
@@ -50,6 +53,24 @@ func run() error {
 
 	logger := newLogger(logLevel)
 	slog.SetDefault(logger)
+
+	discordClient, discordConfigured, err := newDiscordClient(logger)
+	if err != nil {
+		return fmt.Errorf("discord rpc config: %w", err)
+	}
+
+	if discordAuth {
+		if !discordConfigured {
+			return errors.New("discord rpc is not configured: set DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET")
+		}
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+		if err := discordClient.Authorize(ctx); err != nil {
+			return fmt.Errorf("discord auth: %w", err)
+		}
+		fmt.Printf("discord rpc token cached at %s\n", discordClient.TokenCache())
+		return nil
+	}
 
 	logger.Info("starting desk-agent",
 		"version", version,
@@ -76,10 +97,16 @@ func run() error {
 		Logger:     logger,
 	})
 
+	var discordAPI api.Discord
+	if discordConfigured {
+		discordAPI = discordClient
+	}
+
 	srv := api.New(api.Options{
 		Addr:    cfg.ListenAddr(),
 		Token:   cfg.Token,
 		Runner:  run,
+		Discord: discordAPI,
 		Logger:  logger,
 		Version: version,
 	})
@@ -109,6 +136,15 @@ func run() error {
 	}
 	logger.Info("desk-agent stopped cleanly")
 	return nil
+}
+
+func newDiscordClient(logger *slog.Logger) (*discordrpc.Client, bool, error) {
+	cfg, ok, err := discordrpc.ConfigFromEnv()
+	if err != nil || !ok {
+		return nil, false, err
+	}
+	logger.Info("discord rpc configured", "token_cache", cfg.TokenCache)
+	return discordrpc.New(cfg, logger), true, nil
 }
 
 func newLogger(level string) *slog.Logger {

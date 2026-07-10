@@ -9,7 +9,9 @@ Type=simple
 # Adjust to wherever you installed the binary. Default install:
 #   ~/.local/bin/desk-agent
 ExecStart=%h/.local/bin/desk-agent
-# Optional: a env file containing DESK_AGENT_TOKEN=... and other overrides.
+# Env file containing DESK_AGENT_TOKEN=... and optional Discord RPC secrets:
+#   DISCORD_CLIENT_ID=...
+#   DISCORD_CLIENT_SECRET=...
 # Make sure the file is chmod 600.
 EnvironmentFile=-%h/.config/desk-agent/desk-agent.env
 Restart=on-failure

@@ -1,5 +1,3 @@
-designidee.md
-
 # build output
 /dist/
 /bin/
@@ -8,6 +6,10 @@ designidee.md
 
 # go
 /vendor/
+
+# python scratch/test artifacts
+__pycache__/
+*.py[cod]
 
 # editor / OS
 .idea/
