@@ -1,4 +1,4 @@
-﻿// Package assets holds embedded runtime files.
+// Package assets holds embedded runtime files.
 //
 // It lives in the module root so //go:embed can reach the top-level
 // actions/ and configs/ directories. The public API is intentionally tiny:

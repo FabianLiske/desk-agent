@@ -1,6 +1,6 @@
 # desk-120hz.ps1
 #
-# 120-Hz-Sparmodus. Laedt ein MultiMonitorTool-Profil, in dem alle
+# 120-Hz-Sparmodus. Lädt ein MultiMonitorTool-Profil, in dem alle
 # Monitore auf 120 Hz gesetzt sind, damit die GPU im Desktopbetrieb
 # besser heruntertaktet.
 

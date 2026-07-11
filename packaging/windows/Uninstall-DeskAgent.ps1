@@ -1,7 +1,7 @@
 # Uninstall-DeskAgent.ps1
 #
 # Entfernt die Scheduled-Task-Registrierung und (optional) das Binary.
-# Belaesst die Konfiguration in %APPDATA%\desk-agent absichtlich.
+# Belässt die Konfiguration in %APPDATA%\desk-agent absichtlich.
 
 [CmdletBinding()]
 param(

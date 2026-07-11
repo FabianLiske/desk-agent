@@ -1,4 +1,4 @@
-﻿// Package embedded extracts embedded action scripts to a writable location
+// Package embedded extracts embedded action scripts to a writable location
 // on disk on startup so the runner can execute them.
 package embedded
 
@@ -148,5 +148,3 @@ func DataDir() (string, error) {
 		return filepath.Join(home, ".local", "share", "desk-agent"), nil
 	}
 }
-
-

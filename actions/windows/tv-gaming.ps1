@@ -3,9 +3,9 @@
 # TV-Gaming-Modus einschalten:
 #   1. TV-Monitor(e) via MultiMonitorTool aktivieren
 #   2. Desktop-Monitor(e) deaktivieren
-#   3. Wenn gesetzt: primaeren Monitor auf TV wechseln
-#   4. Aktuelles Windows-Default-Audiogeraet in eine State-Datei sichern,
-#      dann TV als Standard-Audiogeraet setzen
+#   3. Wenn gesetzt: primären Monitor auf TV wechseln
+#   4. Aktuelles Windows-Default-Audiogerät in eine State-Datei sichern,
+#      dann TV als Standard-Audiogerät setzen
 #   5. Steam Big Picture starten
 #
 # Monitor-Referenzen sind die kurzen IDs, mit denen MultiMonitorTool
@@ -17,8 +17,8 @@
 # Env-Variablen (siehe .env.example):
 #   DESK_AGENT_MONITORS_TV_ENABLE    Kommaliste zu aktivierender Monitor-IDs
 #   DESK_AGENT_MONITORS_TV_DISABLE   Kommaliste zu deaktivierender Monitor-IDs
-#   DESK_AGENT_MONITOR_TV_PRIMARY    einzelne ID fuer den primaeren Monitor (optional)
-#   DESK_AGENT_AUDIO_TV              Audiogeraet-Name (SoundVolumeView "Name")
+#   DESK_AGENT_MONITOR_TV_PRIMARY    einzelne ID für den primären Monitor (optional)
+#   DESK_AGENT_AUDIO_TV              Audiogerät-Name (SoundVolumeView "Name")
 
 $ErrorActionPreference = 'Continue'
 Set-StrictMode -Version Latest
@@ -76,9 +76,9 @@ $stateFile = Join-Path $stateDir 'audio-default.txt'
 New-Item -ItemType Directory -Force -Path $stateDir | Out-Null
 
 if ($svv) {
-    # Merken, welches Geraet aktuell als Windows-Default-Render markiert ist,
-    # damit desk.ps1 es zurueckdrehen kann. Bricht der Snapshot fehl, wird
-    # der Wechsel trotzdem durchgezogen — nur die Rueckstellung faellt spaeter aus.
+    # Merken, welches Gerät aktuell als Windows-Default-Render markiert ist,
+    # damit desk.ps1 es zurückdrehen kann. Bricht der Snapshot fehl, wird
+    # der Wechsel trotzdem durchgezogen — nur die Rückstellung fällt später aus.
     $tmp = Join-Path $env:TEMP "desk-agent-audio-$([Guid]::NewGuid()).csv"
     try {
         & $svv /scomma $tmp | Out-Null

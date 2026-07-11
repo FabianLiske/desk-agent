@@ -1,13 +1,13 @@
 # discord-mute.ps1
 #
 # Toggle des Discord-eigenen Mikrofon-Mutes. Es wird KEIN systemweiter
-# Mute-Toggle ausgeloest — statt dessen wird das Discord-Fenster kurz
+# Mute-Toggle ausgelöst — statt dessen wird das Discord-Fenster kurz
 # in den Fokus geholt und der eingestellte Discord-Hotkey gesendet
 # (Default: Ctrl+Shift+M). Nach dem Toggle wird der vorherige Fokus
-# nicht wiederhergestellt (Discord-Overlay/Popout ist ohnehin haeufig).
+# nicht wiederhergestellt (Discord-Overlay/Popout ist ohnehin häufig).
 #
 # Voraussetzung:
-#   - Discord laeuft
+#   - Discord läuft
 #   - In Discord unter User Settings > Keybinds ist "Toggle Mute" auf
 #     Ctrl+Shift+M gesetzt (oder ENV DESK_AGENT_DISCORD_HOTKEY entsprechend
 #     angepasst, siehe unten).

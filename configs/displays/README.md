@@ -1,4 +1,4 @@
-﻿# Display profiles
+# Display profiles
 
 Put MultiMonitorTool `.cfg` profiles here.
 

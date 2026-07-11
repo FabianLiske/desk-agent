@@ -15,11 +15,11 @@ actions:
 
   desk:
     script: desk.ps1
-    description: "Zurueck in den normalen Desktop-Modus (Headset-Audio, Standardmonitore)"
+    description: "Zurück in den normalen Desktop-Modus (Headset-Audio, Standardmonitore)"
 
   desk_120hz:
     script: desk-120hz.ps1
-    description: "120-Hz-Sparmodus fuer den Desktopbetrieb"
+    description: "120-Hz-Sparmodus für den Desktopbetrieb"
 
   discord_mute:
     script: discord-mute.ps1

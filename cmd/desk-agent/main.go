@@ -1,4 +1,4 @@
-﻿package main
+package main
 
 import (
 	"context"
@@ -169,5 +169,3 @@ func newLogger(level string) *slog.Logger {
 	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: lvl})
 	return slog.New(handler)
 }
-
-

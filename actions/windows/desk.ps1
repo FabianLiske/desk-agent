@@ -1,13 +1,13 @@
 # desk.ps1
 #
-# Zurueck in den normalen Desktop-Modus:
+# Zurück in den normalen Desktop-Modus:
 #   1. Desktop-Monitor(e) via MultiMonitorTool aktivieren
 #   2. TV-Monitor(e) deaktivieren
-#   3. Wenn gesetzt: primaeren Monitor zuruecksetzen
-#   4. Vorheriges Windows-Default-Audiogeraet aus State-Datei
+#   3. Wenn gesetzt: primären Monitor zurücksetzen
+#   4. Vorheriges Windows-Default-Audiogerät aus State-Datei
 #      wiederherstellen. Existiert die Datei nicht (z.B. weil tv-gaming
-#      nie lief), wird Audio bewusst NICHT angeruehrt — Windows behaelt
-#      dann sein aktuelles Default-Geraet.
+#      nie lief), wird Audio bewusst NICHT angerührt — Windows behält
+#      dann sein aktuelles Default-Gerät.
 #
 # Monitor-Referenzen sind die kurzen MultiMonitorTool-IDs (siehe
 # tv-gaming.ps1).

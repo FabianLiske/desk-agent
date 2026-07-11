@@ -2,7 +2,7 @@
 #
 # Installiert das Desk-Agent-Binary in %LOCALAPPDATA%\desk-agent\bin
 # und registriert eine Aufgabe in der Windows-Aufgabenplanung, die beim
-# Benutzer-Login startet. Der Task laeuft explizit im User-Kontext
+# Benutzer-Login startet. Der Task läuft explizit im User-Kontext
 # (Session-1), NICHT in Session 0, damit Displayprofile / Discord /
 # Steam funktionieren.
 #
@@ -11,7 +11,7 @@
 # Taskdefinition landet.
 #
 # Voraussetzung: im Ziel-User-Kontext aufgerufen. -AddFirewallRule braucht
-# eine erhoehte PowerShell, alle anderen Schritte nicht.
+# eine erhöhte PowerShell, alle anderen Schritte nicht.
 #
 # Beispiel:
 #   .\Install-DeskAgent.ps1 -BinaryPath .\desk-agent-windows-amd64.exe -EnvFile .\desk-agent.env -Start
