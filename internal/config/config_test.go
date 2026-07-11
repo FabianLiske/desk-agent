@@ -22,8 +22,8 @@ listen: ":9000"
 token: "hunter2"
 run_timeout: "30s"
 actions:
-  tv_gaming:
-    script: tv-gaming.ps1
+  displays_tv:
+    script: monitors.ps1
     description: "TV"
 `)
 	cfg, _, err := Load(p)
@@ -39,7 +39,7 @@ actions:
 	if cfg.RunTimeout().Seconds() != 30 {
 		t.Fatalf("timeout: %v", cfg.RunTimeout())
 	}
-	if _, ok := cfg.Actions["tv_gaming"]; !ok {
+	if _, ok := cfg.Actions["displays_tv"]; !ok {
 		t.Fatalf("action missing")
 	}
 }

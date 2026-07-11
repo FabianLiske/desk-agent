@@ -47,7 +47,7 @@ Der Token muss im Header stehen — entweder `Authorization: Bearer <token>` ode
 Beispiel:
 
 ```bash
-curl -X POST http://windows-pc:8765/action/tv_gaming \
+curl -X POST http://windows-pc:8765/action/displays_tv \
      -H "Authorization: Bearer $DESK_AGENT_TOKEN"
 ```
 
@@ -63,11 +63,18 @@ Beispiele: `configs/windows-pc.yaml`, `configs/linux-ws.yaml`.
 Der Token wird nicht in die YAML geschrieben. Setze `token_env: DESK_AGENT_TOKEN`
 und übergib den Wert über die Umgebung (Scheduled Task auf Windows, systemd
 EnvironmentFile auf Linux).
+
 ### Windows-Displayprofile
 
 MultiMonitorTool-Profile gehören ins Repo unter `configs/displays/*.cfg`.
 Beim Start extrahiert der Windows-Agent diese Profile nach
 `%APPDATA%\desk-agent\displays`, wo die PowerShell-Actions sie laden.
+
+Für zustandsbasierte Windows-Monitoraktionen nutzt `monitors.ps1`
+MultiMonitorTool direkt. Die Monitor-Aliase werden über die Umgebung gesetzt:
+`DESK_AGENT_MONITOR_SAMSUNG1`, `DESK_AGENT_MONITOR_SAMSUNG2`,
+`DESK_AGENT_MONITOR_TV` und optional
+`DESK_AGENT_MONITOR_SAMSUNG_DEFAULT_PRIMARY`.
 
 Beispiel für das aktuell aktive Monitor-Setup:
 
@@ -198,17 +205,18 @@ Secrets und Tokens:
 - Argumente aus HTTP-Requests werden nicht an die Skripte durchgereicht.
   Skripte lesen ihre Parameter aus Environment-Variablen.
 - Token-Vergleich in konstanter Zeit (`crypto/subtle`).
-- Betrieb ausschliesslich im LAN; auf Windows den Zugriff per Firewall auf den
+- Betrieb ausschließlich im LAN; auf Windows den Zugriff per Firewall auf den
   Raspberry Pi begrenzen.
 
 ## Actions
 
 | Action         | Windows-Skript        | Linux-Skript         | Zweck                                                     |
 | -------------- | --------------------- | -------------------- | --------------------------------------------------------- |
-| `tv_gaming`    | `tv-gaming.ps1`       | —                    | TV-Monitorprofil, TV-Audio, Steam Big Picture             |
-| `desk`         | `desk.ps1`            | —                    | Rück in Desktop-Modus                                    |
-| `desk_120hz`   | `desk-120hz.ps1`      | —                    | Alle Monitore auf 120 Hz                                  |
-| `discord_mute` | `discord-mute.ps1`    | —                    | Discord-eigenen Mute per Hotkey togglen (kein System-Mute) |
+| `displays_tv`  | `monitors.ps1`        | —                    | TV aktivieren, als Hauptanzeige setzen, Samsungs aus      |
+| `displays_samsung` | `monitors.ps1`    | —                    | Samsung-Monitore aktivieren, TV aus                       |
+| `samsung1_toggle` / `samsung2_toggle` | `monitors.ps1` | —      | Einzelne Samsung-Monitore aktivieren/deaktivieren         |
+| `samsung1_primary` / `samsung2_primary` | `monitors.ps1` | —    | Samsung-Monitor als Hauptanzeige setzen                   |
+| `samsung1_hz_toggle` / `samsung2_hz_toggle` | `monitors.ps1` | — | Samsung-Refresh-Rate umschalten                           |
 
 Voraussetzungen pro Action sind im Skript-Header dokumentiert.
 

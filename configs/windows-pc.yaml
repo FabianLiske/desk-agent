@@ -9,18 +9,42 @@ token_env: "DESK_AGENT_TOKEN"
 run_timeout: "60s"
 
 actions:
-  tv_gaming:
-    script: tv-gaming.ps1
-    description: "TV-Gaming-Modus: TV-Monitorprofil, TV-Audio, Steam Big Picture"
+  displays_tv:
+    script: monitors.ps1
+    args: ["layout-tv"]
+    description: "TV aktivieren, als Hauptanzeige setzen und Samsung-Monitore deaktivieren"
 
-  desk:
-    script: desk.ps1
-    description: "Zurück in den normalen Desktop-Modus (Headset-Audio, Standardmonitore)"
+  displays_samsung:
+    script: monitors.ps1
+    args: ["layout-samsung"]
+    description: "Samsung-Monitore aktivieren und TV deaktivieren"
 
-  desk_120hz:
-    script: desk-120hz.ps1
-    description: "120-Hz-Sparmodus für den Desktopbetrieb"
+  samsung1_toggle:
+    script: monitors.ps1
+    args: ["toggle-enabled", "samsung1"]
+    description: "Samsung 1 aktivieren/deaktivieren"
 
-  discord_mute:
-    script: discord-mute.ps1
-    description: "Discord-eigenen Mute per Hotkey togglen"
+  samsung2_toggle:
+    script: monitors.ps1
+    args: ["toggle-enabled", "samsung2"]
+    description: "Samsung 2 aktivieren/deaktivieren"
+
+  samsung1_primary:
+    script: monitors.ps1
+    args: ["set-primary", "samsung1"]
+    description: "Samsung 1 als Hauptanzeige setzen"
+
+  samsung2_primary:
+    script: monitors.ps1
+    args: ["set-primary", "samsung2"]
+    description: "Samsung 2 als Hauptanzeige setzen"
+
+  samsung1_hz_toggle:
+    script: monitors.ps1
+    args: ["toggle-refresh", "samsung1", "120", "360"]
+    description: "Samsung 1 zwischen 120 Hz und 360 Hz umschalten"
+
+  samsung2_hz_toggle:
+    script: monitors.ps1
+    args: ["toggle-refresh", "samsung2", "120", "240"]
+    description: "Samsung 2 zwischen 120 Hz und 240 Hz umschalten"

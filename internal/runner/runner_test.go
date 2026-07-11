@@ -12,7 +12,7 @@ import (
 )
 
 func TestBuildCommand_WindowsPS1(t *testing.T) {
-	cmd, err := BuildCommand(context.Background(), "windows", `C:\actions\tv-gaming.ps1`, []string{"--extra"})
+	cmd, err := BuildCommand(context.Background(), "windows", `C:\actions\monitors.ps1`, []string{"--extra"})
 	if err != nil {
 		t.Fatalf("BuildCommand: %v", err)
 	}
@@ -20,7 +20,7 @@ func TestBuildCommand_WindowsPS1(t *testing.T) {
 		t.Fatalf("interpreter: %v", cmd.Args)
 	}
 	joined := strings.Join(cmd.Args, " ")
-	for _, want := range []string{"-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "tv-gaming.ps1", "--extra"} {
+	for _, want := range []string{"-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "monitors.ps1", "--extra"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("missing arg %q in %q", want, joined)
 		}

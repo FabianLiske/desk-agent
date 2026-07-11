@@ -24,7 +24,7 @@ type Config struct {
 // Action describes a single allow-listed action.
 //
 // Script is the file name of the script relative to the actions directory
-// for the running OS (e.g. "tv-gaming.ps1"). Args are static extra args
+// for the running OS (e.g. "monitors.ps1"). Args are static extra args
 // forwarded to the interpreter/script.
 type Action struct {
 	Script      string   `yaml:"script"`
