@@ -1,4 +1,4 @@
-package main
+﻿package main
 
 import (
 	"context"
@@ -90,6 +90,13 @@ func run() error {
 	}
 	logger.Info("actions extracted", "dir", actionsDir)
 
+	displayConfigDir, err := embedded.ExtractDisplayConfigs(logger)
+	if err != nil {
+		return fmt.Errorf("extract display configs: %w", err)
+	}
+	if displayConfigDir != "" {
+		logger.Info("display configs extracted", "dir", displayConfigDir)
+	}
 	run := runner.New(runner.Options{
 		ActionsDir: actionsDir,
 		Actions:    cfg.Actions,
@@ -162,3 +169,5 @@ func newLogger(level string) *slog.Logger {
 	handler := slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: lvl})
 	return slog.New(handler)
 }
+
+

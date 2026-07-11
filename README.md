@@ -1,4 +1,4 @@
-# desk-agent
+﻿# desk-agent
 
 Kleiner lokaler Automationsdienst fuer Windows- und Linux-Systeme. Wird per HTTP
 angesprochen (z.B. von Bitfocus Companion auf einem Raspberry Pi), fuehrt
@@ -16,7 +16,7 @@ internal/runner/         Fuehrt Actions per PowerShell / /bin/sh aus
 internal/discordrpc/     Lokale Discord-RPC-Steuerung fuer Mute/Deafen/State
 assets.go                //go:embed all:actions  (im Modul-Root, damit embed die actions/ sieht)
 actions/windows/         PowerShell-Skripte
-configs/                 Beispiel-YAML-Konfigurationen
+configs/                 Beispiel-YAML-Konfigurationen und Display-Profile
 packaging/               systemd-Unit und Windows-Scheduled-Task-Skripte
 .github/workflows/       CI (build) und Release
 Makefile                 lokale Entwicklungskommandos
@@ -25,8 +25,8 @@ Makefile                 lokale Entwicklungskommandos
 Warum liegt `assets.go` (die `//go:embed`-Datei) im Modul-Root und nicht unter
 `internal/embedded/`? Weil `//go:embed`-Patterns keine Pfade oberhalb der eigenen
 Datei sehen duerfen. `actions/` soll aber top-level bleiben (Design-Doc). Das
-Root-Package `assets` exportiert nur `assets.Actions` als `embed.FS` — es macht
-sonst nichts.
+Root-Package `assets` exportiert nur eingebettete Dateien als `embed.FS` â€” es
+macht sonst nichts.
 
 ## HTTP-API
 
@@ -41,7 +41,7 @@ sonst nichts.
 | POST    | `/discord/mute` / `/discord/unmute` | Token | Discord Mute explizit setzen/loeschen         |
 | POST    | `/discord/deafen` / `/discord/undeafen` | Token | Discord Deafen explizit setzen/loeschen   |
 
-Der Token muss im Header stehen — entweder `Authorization: Bearer <token>` oder
+Der Token muss im Header stehen â€” entweder `Authorization: Bearer <token>` oder
 `X-Desk-Agent-Token: <token>`. Es gibt bewusst kein Query-Parameter-Fallback.
 
 Beispiel:
@@ -63,6 +63,18 @@ Beispiele: `configs/windows-pc.yaml`, `configs/linux-ws.yaml`.
 Der Token wird nicht in die YAML geschrieben. Setze `token_env: DESK_AGENT_TOKEN`
 und uebergib den Wert ueber die Umgebung (Scheduled Task auf Windows, systemd
 EnvironmentFile auf Linux).
+### Windows-Displayprofile
+
+MultiMonitorTool-Profile gehoeren ins Repo unter `configs/displays/*.cfg`.
+Beim Start extrahiert der Windows-Agent diese Profile nach
+`%APPDATA%\desk-agent\displays`, wo die PowerShell-Actions sie laden.
+
+Beispiel fuer das aktuell aktive Monitor-Setup:
+
+```powershell
+New-Item -ItemType Directory -Force .\configs\displays
+MultiMonitorTool.exe /SaveConfig .\configs\displays\desk-120hz.cfg
+```
 
 ## Lokaler Entwicklungs-Workflow
 
@@ -151,8 +163,8 @@ Nuetzliche Optionen:
 ```bash
 ./packaging/linux/install.sh ./desk-agent-linux-amd64
 # dann:
-#   ~/.config/desk-agent/desk-agent.env    → DESK_AGENT_TOKEN=..., DISCORD_CLIENT_ID=...
-#   ~/.config/desk-agent/config.yaml       → aus configs/linux-ws.yaml adaptieren
+#   ~/.config/desk-agent/desk-agent.env    â†’ DESK_AGENT_TOKEN=..., DISCORD_CLIENT_ID=...
+#   ~/.config/desk-agent/config.yaml       â†’ aus configs/linux-ws.yaml adaptieren
 source ~/.config/desk-agent/desk-agent.env
 ~/.local/bin/desk-agent -discord-auth
 systemctl --user daemon-reload
@@ -193,10 +205,10 @@ Secrets und Tokens:
 
 | Action         | Windows-Skript        | Linux-Skript         | Zweck                                                     |
 | -------------- | --------------------- | -------------------- | --------------------------------------------------------- |
-| `tv_gaming`    | `tv-gaming.ps1`       | —                    | TV-Monitorprofil, TV-Audio, Steam Big Picture             |
-| `desk`         | `desk.ps1`            | —                    | Rueck in Desktop-Modus                                    |
-| `desk_120hz`   | `desk-120hz.ps1`      | —                    | Alle Monitore auf 120 Hz                                  |
-| `discord_mute` | `discord-mute.ps1`    | —                    | Discord-eigenen Mute per Hotkey togglen (kein System-Mute) |
+| `tv_gaming`    | `tv-gaming.ps1`       | â€”                    | TV-Monitorprofil, TV-Audio, Steam Big Picture             |
+| `desk`         | `desk.ps1`            | â€”                    | Rueck in Desktop-Modus                                    |
+| `desk_120hz`   | `desk-120hz.ps1`      | â€”                    | Alle Monitore auf 120 Hz                                  |
+| `discord_mute` | `discord-mute.ps1`    | â€”                    | Discord-eigenen Mute per Hotkey togglen (kein System-Mute) |
 
 Voraussetzungen pro Action sind im Skript-Header dokumentiert.
 
@@ -213,3 +225,6 @@ checksums.txt
 
 Update auf einem Zielsystem: neues Binary herunterladen, altes ersetzen, Agent
 neu starten.
+
+
+

@@ -1,4 +1,4 @@
-// Package embedded extracts embedded action scripts to a writable location
+﻿// Package embedded extracts embedded action scripts to a writable location
 // on disk on startup so the runner can execute them.
 package embedded
 
@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	assets "github.com/fabianliske/desk-agent"
 )
@@ -71,6 +72,51 @@ func ExtractActions(logger *slog.Logger) (string, error) {
 	return targetRoot, nil
 }
 
+// ExtractDisplayConfigs copies embedded MultiMonitorTool profiles to the
+// roaming config directory used by the Windows action scripts.
+func ExtractDisplayConfigs(logger *slog.Logger) (string, error) {
+	if runtime.GOOS != "windows" {
+		return "", nil
+	}
+
+	base := os.Getenv("APPDATA")
+	if base == "" {
+		return "", errors.New("APPDATA not set")
+	}
+
+	targetRoot := filepath.Join(base, "desk-agent", "displays")
+	if err := os.MkdirAll(targetRoot, 0o755); err != nil {
+		return "", fmt.Errorf("create display config dir: %w", err)
+	}
+
+	srcRoot := "configs/displays"
+	entries, err := fs.ReadDir(assets.DisplayConfigs, srcRoot)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			logger.Warn("no embedded display configs")
+			return targetRoot, nil
+		}
+		return "", fmt.Errorf("read embedded display configs: %w", err)
+	}
+
+	for _, e := range entries {
+		if e.IsDir() || !strings.EqualFold(filepath.Ext(e.Name()), ".cfg") {
+			continue
+		}
+		data, err := fs.ReadFile(assets.DisplayConfigs, srcRoot+"/"+e.Name())
+		if err != nil {
+			return "", fmt.Errorf("read %s: %w", e.Name(), err)
+		}
+		out := filepath.Join(targetRoot, e.Name())
+		if err := writeFileAtomic(out, data, 0o644); err != nil {
+			return "", fmt.Errorf("write %s: %w", out, err)
+		}
+		logger.Debug("extracted display config", "name", e.Name(), "path", out)
+	}
+
+	return targetRoot, nil
+}
+
 func writeFileAtomic(path string, data []byte, mode os.FileMode) error {
 	tmp := path + ".tmp"
 	if err := os.WriteFile(tmp, data, mode); err != nil {
@@ -102,3 +148,5 @@ func DataDir() (string, error) {
 		return filepath.Join(home, ".local", "share", "desk-agent"), nil
 	}
 }
+
+
