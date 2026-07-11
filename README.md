@@ -109,12 +109,42 @@ die HTTP-Endpunkte liefern direkt maschinenlesbaren State:
 ```powershell
 .\packaging\windows\Install-DeskAgent.ps1 `
     -BinaryPath .\desk-agent-windows-amd64.exe `
-    -Token (openssl rand -hex 32)
+    -EnvFile .\desk-agent.env `
+    -Start
 ```
 
 Legt die Binary unter `%LOCALAPPDATA%\desk-agent\bin\desk-agent.exe` ab und
 registriert einen Login-Task in der Windows-Aufgabenplanung, der im User-Kontext
-laeuft (Session 1, nicht 0). Der Token wird in der User-Umgebung gespeichert.
+laeuft (Session 1, nicht 0). Der Installer kopiert, wenn vorhanden,
+`configs\windows-pc.yaml` nach `%APPDATA%\desk-agent\config.yaml`, setzt alle
+Variablen aus `desk-agent.env` in der User-Umgebung und erzeugt einen lokalen
+Task-Launcher unter `%LOCALAPPDATA%\desk-agent\bin\Start-DeskAgent.ps1`, damit
+`-Start` ohne Ab-/Anmelden bereits die neuen Variablen sieht.
+
+Die `desk-agent.env` darf dieselbe Datei sein, die auch unter Linux in
+`~/.config/desk-agent/desk-agent.env` liegt. Unterstuetzt werden einfache
+Shell-Env-Zeilen wie `NAME=value`, `NAME="value"`, `NAME='value'` und
+`export NAME=value`. `DESK_AGENT_TOKEN` muss entweder in dieser Datei stehen
+oder per `-Token` uebergeben werden. Ein Linux-Pfad in `DISCORD_TOKEN_CACHE`
+wird unter Windows ignoriert, damit der Agent dort seinen Windows-lokalen Cache
+verwenden kann.
+
+Nuetzliche Optionen:
+
+```powershell
+# Bestehende config.yaml ueberschreiben
+.\packaging\windows\Install-DeskAgent.ps1 `
+    -BinaryPath .\desk-agent-windows-amd64.exe `
+    -EnvFile .\desk-agent.env `
+    -ForceConfig `
+    -Start
+
+# Private Windows-Firewall-Regel fuer TCP 8765 anlegen (PowerShell als Admin)
+.\packaging\windows\Install-DeskAgent.ps1 `
+    -BinaryPath .\desk-agent-windows-amd64.exe `
+    -EnvFile .\desk-agent.env `
+    -AddFirewallRule
+```
 
 ### Linux
 
